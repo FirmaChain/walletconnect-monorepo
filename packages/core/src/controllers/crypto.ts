@@ -102,7 +102,10 @@ export class Crypto implements ICrypto {
     const params = validateEncoding(opts);
     const message = safeJsonStringify(payload);
     if (isTypeOneEnvelope(params)) {
-      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
+      const selfPublicKey = params.senderPublicKey;
+      const peerPublicKey = params.receiverPublicKey;
+      console.log("encode > type 1 > ", { selfPublicKey, peerPublicKey });
+      topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
     }
     const symKey = this.getSymKey(topic);
     const { type, senderPublicKey } = params;
@@ -114,7 +117,10 @@ export class Crypto implements ICrypto {
     this.isInitialized();
     const params = validateDecoding(encoded, opts);
     if (isTypeOneEnvelope(params)) {
-      topic = await this.generateSharedKey(params.senderPublicKey, params.receiverPublicKey);
+      const selfPublicKey = params.receiverPublicKey;
+      const peerPublicKey = params.senderPublicKey;
+      console.log("decode > type 1 > ", { selfPublicKey, peerPublicKey });
+      topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
     }
     const symKey = this.getSymKey(topic);
     const message = decrypt({ symKey, encoded });

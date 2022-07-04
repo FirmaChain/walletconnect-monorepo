@@ -7,7 +7,7 @@ import Sinon from "sinon";
 import { Core, CORE_DEFAULT, Crypto } from "../src";
 import { expect, TEST_CORE_OPTIONS } from "./shared";
 
-describe("Crypto", () => {
+describe.only("Crypto", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
   const core = new Core(TEST_CORE_OPTIONS);
 
@@ -157,16 +157,33 @@ describe("Crypto", () => {
     const encoded =
       "AG7iJl9mMl9K04REnuWaKLQU6kwMcQWUd69OxGOJ5/A+VRRKkxnKhBeIAl4JRaIft3qZKEfnBvc7/Fife1DWcERqAfJwzPI=";
 
-    it("throws if not initialized", async () => {
-      const invalidCrypto = new Crypto(core, logger);
-      await expect(invalidCrypto.decode("topic", "encoded")).to.eventually.be.rejectedWith(
-        "Not initialized. crypto",
-      );
+    describe("type 0 envelope", () => {
+      it("throws if not initialized", async () => {
+        const invalidCrypto = new Crypto(core, logger);
+        await expect(invalidCrypto.decode("topic", "encoded")).to.eventually.be.rejectedWith(
+          "Not initialized. crypto",
+        );
+      });
+      it("decrypts `payload` if the passed topic is known", async () => {
+        const topic = await crypto.setSymKey(symKey);
+        const decoded = await crypto.decode(topic, encoded);
+        expect(decoded).to.eql(payload);
+      });
     });
-    it("decrypts `payload` if the passed topic is known", async () => {
-      const topic = await crypto.setSymKey(symKey);
-      const decoded = await crypto.decode(topic, encoded);
-      expect(decoded).to.eql(payload);
+
+    describe("type 1 envelope", () => {
+      const receiverPublicKey = utils.generateRandomBytes32();
+      it("throws if not initialized", async () => {
+        const invalidCrypto = new Crypto(core, logger);
+        await expect(
+          invalidCrypto.decode("topic", "encoded", { receiverPublicKey }),
+        ).to.eventually.be.rejectedWith("Not initialized. crypto");
+      });
+      it("decrypts `payload` if the passed topic is known", async () => {
+        const topic = await crypto.setSymKey(symKey);
+        const decoded = await crypto.decode(topic, encoded, { receiverPublicKey });
+        expect(decoded).to.eql(payload);
+      });
     });
   });
 });
